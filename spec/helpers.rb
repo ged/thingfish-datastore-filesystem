@@ -24,11 +24,67 @@ require 'loggability/spechelpers'
 require 'configurability'
 require 'configurability/behavior'
 
+require 'fakefs/spec_helpers'
+require 'fakefs/safe'
+
 require 'rspec'
 require 'thingfish'
 require 'thingfish/spechelpers'
 
 Loggability.format_with( :color ) if $stdout.tty?
+
+
+# Monkeypatch missing functionality into FakeFS
+
+module FakeFS
+
+# 	# Delegate ::size to File::size
+# 	module FileTest
+# 		def self::size( filename )
+# 			File.size( filename )
+# 		end
+# 	end
+
+	# A bunch of 2.x fixes
+	class File < StringIO
+		def self::size( path )
+			read( path ).bytesize
+		end
+
+	    def initialize(path, mode = READ_ONLY, _perm = nil, opts = {})
+	      @path = path
+	      @mode = mode.is_a?(Hash) ? (mode[:mode] || READ_ONLY) : mode
+	      @file = FileSystem.find(path)
+	      @autoclose = true
+		  @opts = opts
+
+	      check_modes!
+
+	      file_creation_mode? ? create_missing_file : check_file_existence!
+
+	      super(@file.content, @mode)
+	    end
+	end
+
+# 	# Make some Pathname method use File instead of IO
+# 	class Pathname
+#
+# 		def read( *args )
+# 			File.read( self.to_s, *args )
+# 		end
+#
+# 		# Removes a file or directory, using <tt>File.unlink</tt> or
+# 		# <tt>Dir.unlink</tt> as necessary.
+# 		def unlink()
+# 			if File.directory?( @path )
+# 				Dir.unlink @path
+# 			else
+# 				File.unlink @path
+# 			end
+# 		end
+# 	end
+
+end # module FakeFS
 
 
 
@@ -37,7 +93,6 @@ RSpec.configure do |c|
 	include Thingfish::SpecHelpers
 	include Thingfish::SpecHelpers::Constants
 
-	c.treat_symbols_as_metadata_keys_with_true_values = true
 	c.run_all_when_everything_filtered = true
 	c.filter_run :focus
 	c.order = 'random'

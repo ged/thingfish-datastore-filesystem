@@ -1,0 +1,8 @@
+2014-12-01  Michael Granger  <ged@FaerieMUD.org>
+
+	* .document, .gitignore, .hgignore, .pryrc, .rvm.gems, .rvmrc,
+	.simplecov, History.rdoc, LICENSE.rdoc, README.rdoc, Rakefile,
+	lib/thingfish/datastore/filesystem.rb, spec/helpers.rb,
+	spec/thingfish/datastore/filesystem_spec.rb:
+	Started work
+	[d1f307e087fd] [tip]

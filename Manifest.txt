@@ -1,0 +1,12 @@
+.document
+.simplecov
+ChangeLog
+History.rdoc
+LICENSE.rdoc
+Manifest.txt
+README.rdoc
+Rakefile
+config.yml
+lib/thingfish/datastore/filesystem.rb
+spec/helpers.rb
+spec/thingfish/datastore/filesystem_spec.rb
