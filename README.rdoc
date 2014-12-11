@@ -1,201 +1,113 @@
-= Strelka (Стрелка)
+= Thingfish Filesystem Datastore
 
-home :: http://deveiate.org/projects/Strelka
-code :: http://bitbucket.org/ged/Strelka
-github :: https://github.com/ged/strelka
-docs :: http://deveiate.org/code/strelka
+* http://bitbucket.org/ged/thingfish-datastore-filesystem
 
 
 == Description
 
-Strelka is a framework for creating and deploying
-Mongrel2[http://mongrel2.org/] web applications in Ruby.
-
-It's named after a lesser known {Russian
-cosmonaut}[http://en.wikipedia.org/wiki/Strelka_(dog)#Belka_and_Strelka] who was
-one of the first canine space travelers to orbit the Earth and return alive.
-Her name means "little arrow".
+This is a data storage plugin for the Thingfish digital asset manager.
+It provides persistent storage for uploaded data to a simple filesystem
+path.
 
 
-== Prerequisites
+== Authors
 
-* Mongrel2[http://mongrel2.org/] 1.8.0 or better
-* Ruby 1.9.3 or better
+* Michael Granger <ged@FaerieMUD.org>
+* Mahlon E. Smith <mahlon@martini.nu>
 
 
 == Installation
 
-    $ gem install strelka
+    $ gem install thingfish-datastore-filesystem
 
 
-== Getting Started
+== Basic Usage
 
-We're going to assume you've already built and installed the Mongrel2 daemon.
-If not, please refer to the  {Mongrel2
-documentation}[http://mongrel2.org/wiki/quick_start.html] and get that  ready.
+By default, data will be stored in a 'thingfish' directory, underneath
+your system's tmpdir.  (For most systems, this will be /tmp/thingfish.)
+This directory will need to exist before starting the Thingfish handler.
 
-Mongrel2 loads its configuration from a SQLite database. You can create the 
-this database in any fashion you like, but the Mongrel2 ruby module includes a
-command-line tool called <tt>m2sh.rb</tt> that'll let you quickstart a server
-if you just want to experiment. If you've already installed the *strelka* gem,
-then it will already have been installed as a dependency.
+As with Thingfish itself, this plugin uses
+Configurability[https://rubygems.org/gems/configurability] to modify
+default behaviors.
 
-To bootstrap a basic server, configure it, and run it:
+Here's an example configuration file that enables this plugin and
+modifies the default storage path:
 
-    $ mkdir strelka-tryout
-    $ cd !$
-    $ m2sh.rb quickstart
+	---
+	thingfish:
+	  datastore: filesystem
 
-This will generate a Ruby DSL config, then invoke an editor on it.
-
-Make sure the config has a line like:
-
-    route '/hello', handler( 'tcp://127.0.0.1:9999',  'helloworld' )
-
-in the 'host' section; that's the part of the Mongrel2 server we'll be talking
-to.
-
-The quickstart will generate a SQLite configuration database for use with
-Mongrel2 in your current working directory, with the default required directory
-structure. Mongrel2 will listen on port 8113 (unless you changed it), and send
-all requests starting at the URI <tt>/hello</tt> to a handler called
-<tt>helloworld</tt>.
-
-If you stop the server (Ctrl-C will do so), you can restart it like so:
-
-    $ m2sh.rb start
-
-Now that the Mongrel2 daemon is up and running, we can move forward and create
-our first application!
+	filesystem_datastore:
+	  root_path: /net/storage/thingfish-data
 
 
+== Advanced Usage
 
-=== A Minimal Application
+This plugin can utilize various advanced features of the Mongrel2 daemon
+that can offload large data transfers to the Mongrel2 daemon directly.
+This frees the Thingfish handler(s) up for servicing new requests
+quickly, and dramatically improves performance for concurrent data
+transfers and large files.
 
-Strelka applications are subclasses of the Strelka::App class. Strelka::App is
-pretty minimal by itself; it inherits most of its behavior from the basic
-Mongrel2::Handler[http://deveiate.org/code/mongrel2/Mongrel2/Handler.html]
-class, only adding a few convenience methods for common HTTP tasks.
+=== Assumptions
 
-A minimal application would look something like:
+Because of Mongrel2's flexible architecture, you could equally run
+everything under a single machine, or scale Thingfish out as a farm,
+spanning hundreds of handlers across individual nodes, all with the same
+configuration.  In any case, Your Thingfish handlers need access to the
+same physical storage device(s) that the Mongrel2 daemon does.
 
-    #!/usr/bin/env ruby
-
-    require 'strelka'
-
-    class HelloWorldApp < Strelka::App
-
-        def handle_request( request )
-            response = request.response
-            response.content_type = 'text/plain'
-            response.puts( "Hello, World!" )
-            return response
-        end
-
-    end # class HelloWorldApp
-
-    # Run the app
-    HelloWorldApp.run if __FILE__ == $0
-
-While functional, this application is pretty dumb, and making it do anything
-more intelligent on your own would require a bunch of additional code and
-accompanying tests.  Fortunately, Strelka already has done the heavy lifting.
-It knows how to read the Mongrel2 configuration and hook your app up with the
-right sockets to talk to the Mongrel2 front end (providing you follow one of
-several simple conventions), provides hooks into the lifecycle of an HTTP
-request, and includes a plugin system that uses these hooks to handle common
-application tasks. This allows you to mix in the specific framework parts you
-need, so you get exactly what you want and nothing more.
+How you accomplish this is entirely up to you, though NFS is a likely
+choice.  There are two directories that the Mongrel2 server and the
+Thingfish handlers will need access to -- one for downloads (this
+plugin's 'root_path' directory), and one for uploads (the Mongrel2 async
+spool directory.)
 
 
-=== Talking to Mongrel2
+=== Downloads
 
-Mongrel2 associates handlers with itself via an identifier, which is described
-in the Mongrel2 manual as a UUID, but can actually be any string consisting of
-dashes and alphanumeric characters. Strelka reads the Mongrel2 config database,
-and can automatically configure its apps to talk to the right socket with the
-right <tt>send_ident</tt> if it can find them. It gives you a couple of
-different ways of doing this. It will default to a string derived from the name
-of the class, or you can set it yourself by declaring an <tt>ID</tt> constant
-in your application class. If you need more control, you can also override the
-<tt>::run</tt> class method and <tt>super</tt> with the right <tt>appid</tt>:
+To enable this functionality for downloads, you'll need to add the
+'sendfile' filter in your Mongrel2 server configuration.  The path to
+this library will vary, depending on where Mongrel2 was installed on
+your system -- but it should look like something that resembles:
 
-    class HelloWorldApp
-        # Run as a tester if not running in the production environment
-        def self::run
-            appid = if Socket.gethostname.include?( 'test' )
-                    'helloworld-test'
-                else
-                    'helloworld'
-                end
+	xrequest '/usr/local/lib/mongrel2/filters/sendfile.so'
 
-            super( appid )
-        end
-    end
-
-Because our <tt>config.sqlite</tt> configuration directs requests to <tt>/</tt>
-to be sent to the <tt>helloworldapp</tt> handler, Strelka will automatically
-find and pair this route to Mongrel2 when run.
-
-Run this handler, then point a browser to <tt>http://localhost:8080/</tt>.  If
-you see the text "Hello, World!", congrats!  We'll build off of this in the
-next section, the {Strelka Tutorial}[rdoc-ref:Tutorial.rdoc].
+That filter is automatically built alongside Mongrel2, it just needs to
+be switched on.  Ensure the 'root_path' is accessible from the Thingfish
+handler(s) and the Mongrel2 daemon.
 
 
-== Further Reading
+=== Uploads
 
-You'll likely want to start with {the Tutorial}[rdoc-ref:Tutorial.rdoc].
+Uploads also require altering Mongrel2 server settings:
 
+	setting 'limits.content_length', 65536
 
-== Roadmap
+This switches on async uploads, for any upload larger than 64k.
+Anything under 64k is kept in RAM, and handled internally by the
+Thingfish handler.  Adjust to taste.
 
-Going forward, we're going to be extracting useful stuff out of our own
-applications as plugins, and finishing up the packaging and deployment
-stories once we've ironed out the details in own environment.
+	setting 'upload.temp_store', '/network/storage/mongrel2.upload.XXXXXXX'
 
-Here's a tentative list of what kinds of stuff we have planned:
+For files larger than 'limits.content_length' size, asynchronously
+spool the upload to this location.  When the file upload has completed,
+Mongrel2 notifies Thingfish, and the spooled upload is properly stored.
+This path must be accessible from the Thingfish handler(s) and the
+Mongrel2 daemon.
 
-=== More Plugins
+	setting 'upload.temp_store_mode', '0600'
 
-* CORS -- manage {Cross-Origin Resource Sharing}[http://www.html5rocks.com/en/tutorials/cors/]
-  headers, especially for service applications
-* caching -- utilities for easy HTTP caching
-
-=== Deployment/Packaging
-
-You'll be able to package up your applications as Rubygems for easy deployment.
-The Strelka::App class already supports application discovery, but we
-want to hook that up to the 'strelka' command line tool so you can install
-and run them with a minimum of manual monkeying around with directories,
-migrations, etc.
-
-=== New Application Styles
-
-Create some new handler classes for different application styles, similar to
-those in the Tir[http://tir.mongrel2.org/] framework.
-
-=== Chunked Encoding
-
-Support for sending partial responses via the Chunked encoding.
-
-
-== Contributing
-
-You can check out the current development source with Mercurial via its
-{project page}[http://bitbucket.org/ged/Strelka]. Or if you prefer Git, via 
-{its Github mirror}[https://github.com/ged/strelka].
-
-After checking out the source, run:
-
-    $ rake newb
-
-This task will install any missing dependencies, run the tests/specs,
-and generate the API documentation.
+While this is not required, it is recommended to spool files so they
+are readable only to the Mongrel2 process.  It is your responsibility
+to ensure the user account running the Thingfish handler also has
+read/write access to these files.
 
 
 == License
 
-Copyright (c) 2011-2013, Michael Granger and Mahlon E. Smith
+Copyright (c) 2014, Michael Granger and Mahlon E. Smith
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
