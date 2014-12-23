@@ -26,7 +26,7 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 
 	# Configurability API -- default configuration
 	DEFAULT_CONFIG = {
-		root_path: Pathname( Dir.tmpdir ),
+		root_path: Pathname( Dir.tmpdir ) + 'thingfish',
 	}
 
 
@@ -84,6 +84,37 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 	end
 
 
+	### Fetch the data corresponding to the given +oid+ as an IOish object.
+	def fetch( oid )
+		return self.retrieve( oid )
+	end
+
+
+	### Returns +true+ if the datastore has a file for the specified +oid+.
+	def include?( oid )
+		return self.hashed_path( oid ).exist?
+	end
+
+
+	### Remove the data associated with +oid+ from the Datastore.
+	def remove( oid )
+		return self.hashed_path( oid ).unlink
+	end
+
+
+	### Replace the existing object associated with +oid+ with the data read from the
+	### given +io+.
+	def replace( oid, io )
+		pos = io.pos
+		self.store( oid, io )
+
+		return true
+	ensure
+		io.pos = pos if pos
+	end
+
+
+
 	#########
 	protected
 	#########
@@ -96,9 +127,19 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 		if io.respond_to?( :path )
 			self.move_spoolfile( io.path, storefile )
 		else
+			self.log.debug "Spooling in-memory upload to %s" % [ storefile.to_s ]
 			spoolfile = self.spool_to_tempfile( io, storefile )
 			self.move_spoolfile( spoolfile, storefile )
 		end
+	end
+
+
+	### Look up the file corresponding to the specified +oid+ and return a
+	### File for it.
+	def retrieve( oid )
+		storefile = self.hashed_path( oid )
+		return nil unless storefile.exist?
+		return storefile.open( 'r', encoding: 'binary' )
 	end
 
 

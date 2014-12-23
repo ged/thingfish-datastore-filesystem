@@ -33,7 +33,7 @@ hoespec = Hoe.spec 'thingfish-datastore-filesystem' do |spec|
 	spec.dependency 'configurability', '~> 2.2'
 
 	spec.dependency 'rspec', '~> 3.0', :developer
-	spec.dependency 'fakefs', '~> 0.6', :developer
+	spec.dependency 'simplecov', '~> 0.9', :developer
 
 	spec.require_ruby_version( '>=2.0.0' )
 	spec.hg_sign_tags = true if spec.respond_to?( :hg_sign_tags= )

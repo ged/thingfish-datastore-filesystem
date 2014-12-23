@@ -8,15 +8,27 @@ require 'thingfish/datastore/filesystem'
 
 
 describe Thingfish::Datastore::Filesystem do
-	include FakeFS::SpecHelpers
 
 	before( :each ) do
-		described_class.defaults[:root_path].mkpath
-		described_class.configure
+		@testing_root_path = described_class.defaults[:root_path]
+		@testing_root_path.mkpath
+		described_class.configure( root_path: @testing_root_path )
 	end
+
+	after( :each ) do
+		@testing_root_path.rmtree
+	end
+
 
 	let( :png_io ) { StringIO.new(TEST_PNG_DATA.dup) }
 	let( :text_io ) { StringIO.new(TEST_TEXT_DATA.dup) }
+	let( :test_spoolfile ) { @testing_root_path + 'test_io' }
+	let( :file_io ) do
+		io = test_spoolfile.open( 'w+' )
+		io.print( TEST_PNG_DATA )
+		io.rewind
+		io
+	end
 
 	let( :store ) { Thingfish::Datastore.create(:filesystem) }
 
@@ -33,15 +45,22 @@ describe Thingfish::Datastore::Filesystem do
 	end
 
 
-	it "spools data from an IO with no path to a intermediate tempfile"
-
-	it "moves the file for an IO with a path directly to the datastore"
-
 
 	context "datastore behavior" do
 
 		it "returns a UUID when saving" do
 			expect( store.save(png_io) ).to be_a_uuid()
+		end
+
+
+		it "stores an IO with a path by moving it into place" do
+			new_uuid = store.save( file_io )
+
+			rval = store.fetch( new_uuid )
+			expect( rval ).to respond_to( :read )
+			expect( rval.read ).to eq( TEST_PNG_DATA )
+
+			expect( test_spoolfile ).to_not exist
 		end
 
 		it "restores the position of the IO after saving" do
