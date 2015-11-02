@@ -28,6 +28,7 @@ hoespec = Hoe.spec 'thingfish-datastore-filesystem' do |spec|
 	end
 
 	spec.developer 'Michael Granger', 'ged@FaerieMUD.org'
+	spec.developer 'Mahlon E. Smith', 'mahlon@martini.nu'
 
 	spec.dependency 'thingfish', '~> 0.5'
 	spec.dependency 'configurability', '~> 2.2'

@@ -122,7 +122,7 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 	### Move the file behind the specified +io+ into the datastore.
 	def store( oid, io )
 		storefile = self.hashed_path( oid )
-		storefile.dirname.mkpath
+		FileUtils.mkpath( storefile.dirname.to_s, :mode => 0711 )
 
 		if io.respond_to?( :path )
 			self.move_spoolfile( io.path, storefile )
