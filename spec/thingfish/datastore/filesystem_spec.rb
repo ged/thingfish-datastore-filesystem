@@ -30,6 +30,10 @@ describe Thingfish::Datastore::Filesystem do
 		io
 	end
 
+	let( :string_io ) do
+		StringIO.new( TEST_PNG_DATA )
+	end
+
 	let( :store ) { Thingfish::Datastore.create(:filesystem) }
 
 
@@ -58,6 +62,19 @@ describe Thingfish::Datastore::Filesystem do
 		expect( test_spoolfile ).to_not exist
 	end
 
+
+	it "spools an in-memory file to the datastore directory" do
+		io = string_io
+		io.seek( 0, IO::SEEK_END )
+		pos = io.pos
+
+		new_uuid = store.save( io )
+		rval = store.fetch( new_uuid )
+
+		expect( io.pos ).to eq( pos )
+		expect( rval.read ).to eq( TEST_PNG_DATA )
+		expect( test_spoolfile ).to_not exist
+	end
 
 end
 

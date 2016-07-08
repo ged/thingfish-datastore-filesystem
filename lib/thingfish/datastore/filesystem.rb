@@ -170,10 +170,13 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 	### Spool the data from the given +io+ to a temporary file based on the
 	### specified +storefile+.
 	def spool_to_tempfile( io, storefile )
+		io.rewind
+
 		extension = "-%d.%5f.%s.spool" % [ Process.pid, Time.now.to_f, SecureRandom.hex(6) ]
 		spoolfile = storefile.dirname + (storefile.basename.to_s + extension)
 		spoolfile.open( IO::EXCL|IO::CREAT|IO::WRONLY, 0600, encoding: 'binary' ) do |fh|
-			IO.copy_stream( io, fh )
+			bytes = IO.copy_stream( io, fh )
+			self.log.debug "Copied %d bytes." % [ bytes ]
 		end
 
 		return spoolfile
