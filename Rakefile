@@ -21,7 +21,7 @@ hoespec = Hoe.spec 'thingfish-datastore-filesystem' do |spec|
 	spec.readme_file = 'README.rdoc'
 	spec.history_file = 'History.rdoc'
 	spec.extra_rdoc_files = FileList[ '*.rdoc' ]
-	spec.license 'BSD'
+	spec.license 'BSD-3-Clause'
 
 	if File.directory?( '.hg' )
 		spec.spec_extras[:rdoc_options] = ['-f', 'fivefish', '-t', 'Thingfish-Datastore-FileSystem']
