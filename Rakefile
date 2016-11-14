@@ -15,7 +15,6 @@ Hoe.plugin :deveiate
 Hoe.plugin :bundler
 
 Hoe.plugins.delete :rubyforge
-Hoe.plugins.delete :gemcutter
 
 hoespec = Hoe.spec 'thingfish-datastore-filesystem' do |spec|
 	spec.readme_file = 'README.rdoc'
