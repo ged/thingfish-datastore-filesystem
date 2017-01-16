@@ -34,11 +34,11 @@ default behaviors.
 Here's an example configuration file that enables this plugin and
 modifies the default storage path:
 
-	---
-	thingfish:
-	  datastore: filesystem
-		filesystem_datastore:
-		  root_path: /net/storage/thingfish-data
+  ---
+  thingfish:
+    datastore: filesystem
+    filesystem_datastore:
+      root_path: /net/storage/thingfish-data
 
 
 == Advanced Usage
