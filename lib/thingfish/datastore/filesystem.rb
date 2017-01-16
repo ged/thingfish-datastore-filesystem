@@ -24,32 +24,21 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 	# The number of subdirectories to use in the hashed directory tree. Must be 2, 4, or 8
 	HASH_DEPTH = 4
 
-	# Configurability API -- default configuration
-	DEFAULT_CONFIG = {
-		root_path: Pathname( Dir.tmpdir ) + 'thingfish',
-	}
-
-
 	# Loggability API -- log to the thingfish logger
 	log_to :thingfish
 
-	##
-	# The directory to use for the datastore
-	singleton_attr_accessor :root_path
-	@root_path = DEFAULT_CONFIG[ :root_path ]
+	# Configurability API -- set up settings and defaults
+	configurability( 'thingfish.filesystem_datastore' ) do
 
+		##
+		# The directory to use for the datastore
+		setting :root_path, default: Pathname( Dir.tmpdir ) + 'thingfish' do |val|
+			val = Pathname( val )
+			raise ArgumentError, "root path %s does not exist" % [ val ] unless
+				val.exist?
+			val
+		end
 
-	# Configurability API -- the section of the config to use
-	config_key :filesystem_datastore
-
-
-	### Configurability API -- configure the filesystem datastore.
-	def self::configure( config=nil )
-		config = self.defaults.merge( config || {} )
-
-		self.root_path = Pathname( config[:root_path] )
-		raise ArgumentError, "root path %s does not exist" % [ self.root_path ] unless
-			self.root_path.exist?
 	end
 
 
