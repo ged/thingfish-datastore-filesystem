@@ -16,7 +16,7 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 	       Thingfish::Normalization
 
 	# Package version
-	VERSION = '0.2.0'
+	VERSION = '0.2.1'
 
 	# Version control revision
 	REVISION = %q$Revision$
@@ -33,12 +33,8 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 		##
 		# The directory to use for the datastore
 		setting :root_path, default: Pathname( Dir.tmpdir ) + 'thingfish' do |val|
-			val = Pathname( val )
-			raise ArgumentError, "root path %s does not exist" % [ val ] unless
-				val.exist?
-			val
+			Pathname( val ) if val
 		end
-
 	end
 
 
@@ -46,6 +42,7 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 	def initialize
 		super
 		@root_path = self.class.root_path
+		raise ArgumentError, "root path %s does not exist" % [ @root_path ] unless @root_path.exist?
 	end
 
 

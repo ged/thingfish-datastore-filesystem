@@ -48,6 +48,7 @@ describe Thingfish::Datastore::Filesystem do
 	it "raises an exception if the configured root directory doesn't exist" do
 		expect {
 			described_class.configure( root_path: '/nonexistent' )
+			described_class.new
 		}.to raise_error( ArgumentError, /root path \/nonexistent does not exist/ )
 	end
 
