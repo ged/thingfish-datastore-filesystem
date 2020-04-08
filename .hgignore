@@ -4,3 +4,5 @@ coverage/
 ChangeLog
 doc/
 pkg/
+gem.deps.rb.lock
+

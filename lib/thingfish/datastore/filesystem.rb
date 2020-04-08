@@ -16,10 +16,10 @@ class Thingfish::Datastore::Filesystem < Thingfish::Datastore
 	       Thingfish::Normalization
 
 	# Package version
-	VERSION = '0.2.1'
+	VERSION = '0.2.2'
 
 	# Version control revision
-	REVISION = %q$Revision$
+	REVISION = %q$Revision: 6fd20473c7d7 $
 
 	# The number of subdirectories to use in the hashed directory tree. Must be 2, 4, or 8
 	HASH_DEPTH = 4
